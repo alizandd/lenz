@@ -1,0 +1,40 @@
+apply plugin: "com.android.application"
+apply plugin: "com.facebook.react"
+
+android {
+    compileSdkVersion 34
+    buildToolsVersion "34.0.0"
+
+    namespace "com.lenz"
+
+    defaultConfig {
+        applicationId "com.lenz"
+        minSdkVersion 21
+        targetSdkVersion 33
+        versionCode 1
+        versionName "1.0"
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    buildTypes {
+        debug { }
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: "libs", include: ["*.jar"])
+    implementation("com.facebook.react:react-android")
+    // Include JSC explicitly when Hermes is disabled to avoid libhermes.so crash
+    implementation "org.webkit:android-jsc:+"
+    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.0.0"
+    implementation project(':react-native-video')
+    implementation project(':react-native-svg')
+}
+

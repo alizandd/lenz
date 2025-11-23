@@ -1,0 +1,57 @@
+apply plugin: "com.android.application"
+apply plugin: "com.facebook.react"
+
+def enableHermes = project.findProperty('hermesEnabled')?.toBoolean() ?: false
+
+android {
+    compileSdkVersion 34
+    buildToolsVersion "34.0.0"
+
+    namespace "com.lenz"
+
+    defaultConfig {
+        applicationId "com.lenz"
+        minSdkVersion 21
+        targetSdkVersion 33
+        versionCode 2
+        versionName "1.2"
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    signingConfigs {
+        release {
+            keyAlias 'my-key-alias'
+            keyPassword 'Ali235235'
+            storeFile file('my-release-key.keystore')
+            storePassword 'Ali235235'
+        }
+    }
+
+    buildTypes {
+        debug { }
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+            signingConfig signingConfigs.release
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: "libs", include: ["*.jar"])
+    implementation("com.facebook.react:react-android")
+    // Include Hermes or JSC based on configuration
+    if (enableHermes) {
+        implementation("com.facebook.react:hermes-android")
+    } else {
+        implementation "org.webkit:android-jsc:+"
+    }
+    implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.0.0"
+    implementation project(':react-native-video')
+    implementation project(':react-native-svg')
+}
+
