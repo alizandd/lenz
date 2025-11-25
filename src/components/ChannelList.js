@@ -116,6 +116,9 @@ const ChannelList = forwardRef(({ channels, selectedChannelId, onChannelSelect, 
       showContainer();
       scheduleHide(60000);
     },
+    hide: () => {
+      hideContainer();
+    },
     toggle: () => {
       if (isVisibleRef.current) {
         hideContainer();
@@ -123,7 +126,8 @@ const ChannelList = forwardRef(({ channels, selectedChannelId, onChannelSelect, 
         showContainer();
         scheduleHide(60000);
       }
-    }
+    },
+    isVisible: () => isVisibleRef.current,
   }));
 
   /**
@@ -152,6 +156,7 @@ const ChannelList = forwardRef(({ channels, selectedChannelId, onChannelSelect, 
       (event) => {
         if (paused) return;
         if (event.action !== 0) return; // Only handle key down
+        if (event.keyCode === 4) return; // Ignore Back button
 
         // If hidden, any key just shows it and resets timer
         if (!isVisibleRef.current) {

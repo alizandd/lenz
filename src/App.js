@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef } from 'react';
-import { StyleSheet, View, StatusBar, DeviceEventEmitter, Text, TouchableWithoutFeedback, BackHandler, Alert, Linking, Platform } from 'react-native';
+import { StyleSheet, View, StatusBar, DeviceEventEmitter, Text, TouchableWithoutFeedback, BackHandler, Alert, Linking, Platform, NativeModules } from 'react-native';
 import VideoPlayer from './components/VideoPlayer';
 import ChannelList from './components/ChannelList';
 import LoadingScreen from './components/LoadingScreen';
@@ -41,6 +41,12 @@ const App = () => {
         setExitModalVisible(false);
         return true;
       }
+
+      if (channelListRef.current && channelListRef.current.isVisible()) {
+        channelListRef.current.hide();
+        return true;
+      }
+
       setExitModalVisible(true);
       return true;
     };
@@ -151,7 +157,8 @@ const App = () => {
   const handleScreenTouch = () => {
     if (channelListRef.current) {
       // On mobile, toggle the list. On TV, just show it (though touch is rare on TV)
-      if (Platform.isTV) {
+      const isTV = Platform.isTV || Platform.OS === 'tv';
+      if (isTV) {
         channelListRef.current.show();
       } else {
         channelListRef.current.toggle();
@@ -230,7 +237,16 @@ const App = () => {
 
         <ExitModal
           visible={exitModalVisible}
-          onConfirm={() => BackHandler.exitApp()}
+          onConfirm={() => {
+            // Use native module to properly exit the app
+            const { ExitModule } = NativeModules;
+            if (ExitModule) {
+              ExitModule.exitApp();
+            } else {
+              // Fallback to BackHandler
+              BackHandler.exitApp();
+            }
+          }}
           onCancel={() => setExitModalVisible(false)}
         />
       </View>

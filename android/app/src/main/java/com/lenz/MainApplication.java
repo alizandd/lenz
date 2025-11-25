@@ -28,6 +28,7 @@ public class MainApplication extends Application implements ReactApplication {
       packages.add(new MainReactPackage());
       packages.add(new ReactVideoPackage());
       packages.add(new SvgPackage());
+      packages.add(new ExitPackage());
       return packages;
     }
 

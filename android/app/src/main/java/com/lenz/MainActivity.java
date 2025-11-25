@@ -10,6 +10,9 @@ import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
 import android.view.KeyEvent;
+import android.os.Bundle;
+import android.view.View;
+import com.facebook.react.modules.i18nmanager.I18nUtil;
 
 /**
  * MainActivity for the Lenz TV application
@@ -18,7 +21,26 @@ import android.view.KeyEvent;
 public class MainActivity extends ReactActivity {
 
   /**
-   * Returns the name of the main component registered from JavaScript. This is used to schedule
+   * Force RTL layout direction on activity creation
+   */
+  @Override
+  protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+
+    // Force RTL at native level
+    I18nUtil sharedI18nUtilInstance = I18nUtil.getInstance();
+    sharedI18nUtilInstance.allowRTL(getApplicationContext(), true);
+    sharedI18nUtilInstance.forceRTL(getApplicationContext(), true);
+
+    // Also set layout direction on the window
+    if (getWindow() != null && getWindow().getDecorView() != null) {
+      getWindow().getDecorView().setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
+    }
+  }
+
+  /**
+   * Returns the name of the main component registered from JavaScript. This is
+   * used to schedule
    * rendering of the component.
    */
   @Override
@@ -27,8 +49,10 @@ public class MainActivity extends ReactActivity {
   }
 
   /**
-   * Returns the instance of the {@link ReactActivityDelegate}. Here we use a util class {@link
-   * DefaultReactActivityDelegate} which allows you to easily enable Fabric and Concurrent React
+   * Returns the instance of the {@link ReactActivityDelegate}. Here we use a util
+   * class {@link
+   * DefaultReactActivityDelegate} which allows you to easily enable Fabric and
+   * Concurrent React
    * (aka React 18) with two boolean flags.
    */
   @Override
@@ -45,8 +69,7 @@ public class MainActivity extends ReactActivity {
    */
   @Override
   public boolean onKeyDown(int keyCode, KeyEvent event) {
-    ReactContext reactContext =
-        getReactNativeHost().getReactInstanceManager().getCurrentReactContext();
+    ReactContext reactContext = getReactNativeHost().getReactInstanceManager().getCurrentReactContext();
 
     if (reactContext != null) {
       WritableMap params = Arguments.createMap();
@@ -72,6 +95,3 @@ public class MainActivity extends ReactActivity {
     return super.onKeyDown(keyCode, event);
   }
 }
-
-
-
