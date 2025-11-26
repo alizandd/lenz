@@ -1,23 +1,21 @@
-import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle, useMemo } from 'react';
 import {
   StyleSheet,
   View,
   ScrollView,
   TouchableOpacity,
   Image,
-  Dimensions,
   DeviceEventEmitter,
   Text,
   Animated,
   Easing,
   Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { SvgUri, SvgXml } from 'react-native-svg';
 
-const { width, height } = Dimensions.get('window');
 const isTV = Platform.isTV;
 const VISIBLE_ROWS = 6;
-const VISIBLE_COLS = 12;
 const ITEM_MARGIN = 10;
 
 // TV Constants
@@ -25,15 +23,7 @@ const TV_ITEM_SIZE = 65;
 const TV_COLUMNS = 12;
 
 // Mobile Constants
-// We want items to be roughly 60-80px wide on mobile for better visibility
 const MIN_MOBILE_ITEM_WIDTH = 60; // Reduced to allow more items/smaller items
-const availableWidth = width - 60; // 30px padding horizontal
-const mobileColumns = Math.floor(availableWidth / (MIN_MOBILE_ITEM_WIDTH + ITEM_MARGIN));
-const finalMobileColumns = Math.max(4, mobileColumns); // Ensure at least 4 columns for smaller items
-const mobileItemWidth = (availableWidth / finalMobileColumns) - ITEM_MARGIN;
-
-const ITEMS_PER_ROW = isTV ? TV_COLUMNS : finalMobileColumns;
-const ITEM_SIZE = isTV ? TV_ITEM_SIZE : mobileItemWidth;
 
 // Inline SVG for the app logo to avoid network/require issues on React Native
 const lenzLogoXml = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
@@ -42,8 +32,7 @@ const lenzLogoXml = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
         <g id="lenz-logo-copy-3">
             <g id="Group" transform="translate(3.000000, 3.000000)">
                 <path d="M245.946094,328.184723 L114.28402,328.184723 C51.882438,328.184723 0.826513905,277.12805 0.826513905,214.725242 L0.826513905,83.0615445 C0.826513905,37.8385022 37.8264444,0.837718489 83.0488227,0.837718489 L203.152293,0.837718489 C271.911262,0.837718489 328.168403,57.0959952 328.168403,125.855664 L328.168403,245.961207 C328.168403,291.18394 291.168472,328.184723 245.946094,328.184723" id="Fill-8" fill="#C4161C"></path>
-                <path d="M65.5152981,72.8025984 L65.5152981,34.2441855 C65.5152981,33.9032187 65.7942668,33.6242459 66.1352286,33.6242459 L195.218702,33.6242459 C252.000924,33.6242459 298.458824,80.0828278 298.458824,136.865883 L298.458824,259.845777 C298.458824,260.186744 298.179855,260.465717 297.838893,260.465717 L262.577651,260.465717 L262.577651,295.464126 L130.820727,295.464126 C75.1680185,295.464126 29.6341251,254.109507 29.6341251,198.455981 L29.6341251,72.8025984 L65.5152981,72.8025984 Z M65.5152981,72.8025984 L65.5152981,187.681711 C65.5152981,227.713069 98.2674649,260.465717 138.298236,260.465717 L262.577651,260.465717 L262.577651,154.084736 C262.577651,109.379343 226.001133,72.8025984 181.296706,72.8025984 L65.5152981,72.8025984 Z" id="Combined-Shape" fill="#FFB1B1"></path>
-                <path d="M65.5152981,72.8025984 L181.296706,72.8025984 C226.001133,72.8025984 262.577651,109.379343 262.577651,154.084736 L262.577651,260.465717 L138.298236,260.465717 C98.2674649,260.465717 65.5152981,227.713069 65.5152981,187.681711 L65.5152981,72.8025984 Z" id="Combined-Shape" fill="#FED484"></path>
+                <path d="M65.5152981,72.8025984 L65.5152981,34.2441855 C65.5152981,33.9032187 65.7942668,33.6242459 66.1352286,33.6242459 L195.218702,33.6242459 C252.000924,33.6242459 298.458824,80.0828278 298.458824,136.865883 L298.458824,259.845777 C298.458824,260.186744 298.179855,260.465717 297.838893,260.465717 L262.577651,260.465717 L262.577651,295.464126 L130.820727,295.464126 C75.1680185,295.464126 29.6341251,254.109507 29.6341251,198.455981 L29.6341251,72.8025984 L65.5152981,72.8025984 Z M65.5152981,72.8025984 L65.5152981,187.681711 C65.5152981,227.713069 98.2674649,260.465717 138.298236,260.465717 L262.577651,260.465717 L262.577651,154.084736 C262.577651,109.379343 226.001133,72.8025984 181.296706,72.8025984 L65.5152981,72.8025984 Z" id="Combined-Shape" fill="#FED484"></path>
                 <path d="M65.5152981,72.8025984 L29.6341251,72.8025984 L29.6341251,198.455981 C29.6341251,254.109507 75.1680185,295.464126 130.820727,295.464126 L262.577651,295.464126 L262.577651,260.465717 L138.298236,260.465717 C98.2674649,260.465717 65.5152981,227.713069 65.5152981,187.681711 L65.5152981,72.8025984 Z" id="Combined-Shape" fill="#FEAA0A"></path>
                 <path d="M242.063934,241.116101 L153.847208,241.116101 C116.55777,241.116101 86.0482013,212.570673 86.0482013,175.280687 L86.0482013,91.1682153 C86.0482013,90.8272486 86.32717,90.5482758 86.6681318,90.5482758 L172.634511,90.5482758 C211.16164,90.5482758 242.683865,122.070963 242.683865,160.598658 L242.683865,240.496161 C242.683865,240.837128 242.404896,241.116101 242.063934,241.116101" id="Fill-14" fill="#FFFFFF"></path>
                 <path d="M220.967514,164.891709 C220.967514,196.147202 195.630336,221.484753 164.375301,221.484753 C133.120266,221.484753 107.783088,196.147202 107.783088,164.891709 C107.783088,133.636215 133.120266,108.298665 164.375301,108.298665 C195.630336,108.298665 220.967514,133.636215 220.967514,164.891709" id="Fill-16" fill="#232E41"></path>
@@ -65,17 +54,50 @@ const lenzLogoXml = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
  * @param {Function} onChannelSelect - Callback when a channel is selected
  */
 const ChannelList = forwardRef(({ channels, selectedChannelId, onChannelSelect, paused }, ref) => {
+  const { width, height } = useWindowDimensions();
   const [position, setPosition] = useState({ x: 0, y: 0 }); // x = col, y = row
   const [isVisible, setIsVisible] = useState(true);
 
   const scrollViewRef = useRef(null);
   const hideTimerRef = useRef(null);
   const slideAnim = useRef(new Animated.Value(0)).current; // 0 = visible, >0 = hidden (translated down)
-  const windowHeight = Dimensions.get('window').height;
-  const CONTAINER_HEIGHT = windowHeight * 0.42;
-
-
   const isVisibleRef = useRef(true);
+
+  // Dynamic calculations based on current window dimensions
+  const {
+    itemsPerRow,
+    itemSize,
+    containerHeight
+  } = useMemo(() => {
+    const isLandscape = width > height;
+
+    // Calculate container height
+    // In landscape, we want it smaller relative to screen height to avoid taking up too much space
+    // In portrait, 40% is fine. In landscape, we reduce it to 35%
+    const heightPercentage = isLandscape ? 0.35 : 0.40;
+    const calculatedHeight = height * heightPercentage;
+
+    // Calculate grid layout
+    let cols, size;
+    if (isTV) {
+      cols = TV_COLUMNS;
+      size = TV_ITEM_SIZE;
+    } else {
+      const availableWidth = width - 60; // 30px padding horizontal
+      const mobileColumns = Math.floor(availableWidth / (MIN_MOBILE_ITEM_WIDTH + ITEM_MARGIN));
+      const finalMobileColumns = Math.max(4, mobileColumns);
+      const mobileItemWidth = (availableWidth / finalMobileColumns) - ITEM_MARGIN;
+
+      cols = finalMobileColumns;
+      size = mobileItemWidth;
+    }
+
+    return {
+      itemsPerRow: cols,
+      itemSize: size,
+      containerHeight: calculatedHeight
+    };
+  }, [width, height]);
 
   const showContainer = () => {
     if (hideTimerRef.current) {
@@ -95,12 +117,21 @@ const ChannelList = forwardRef(({ channels, selectedChannelId, onChannelSelect, 
     setIsVisible(false);
     isVisibleRef.current = false;
     Animated.timing(slideAnim, {
-      toValue: CONTAINER_HEIGHT,
+      toValue: containerHeight, // Use dynamic height for full hiding
       duration: 250,
       easing: Easing.in(Easing.cubic),
       useNativeDriver: true,
     }).start();
   };
+
+  // Update slideAnim when containerHeight changes to ensure it stays hidden or visible correctly
+  // This fixes the issue where rotating the device might leave the list partially visible if it was hidden
+  useEffect(() => {
+    if (!isVisibleRef.current) {
+      // If currently hidden, update the translation to the new height immediately
+      slideAnim.setValue(containerHeight);
+    }
+  }, [containerHeight, slideAnim]);
 
   const scheduleHide = (duration = 5000) => {
     if (hideTimerRef.current) {
@@ -134,8 +165,8 @@ const ChannelList = forwardRef(({ channels, selectedChannelId, onChannelSelect, 
    * Get row and column for a given index
    */
   const getRowCol = (index) => {
-    const row = Math.floor(index / ITEMS_PER_ROW);
-    const col = index % ITEMS_PER_ROW;
+    const row = Math.floor(index / itemsPerRow);
+    const col = index % itemsPerRow;
     return { row, col };
   };
 
@@ -143,7 +174,7 @@ const ChannelList = forwardRef(({ channels, selectedChannelId, onChannelSelect, 
    * Get index from row and column
    */
   const getIndexFromRowCol = (row, col) => {
-    return row * ITEMS_PER_ROW + col;
+    return row * itemsPerRow + col;
   };
 
   /**
@@ -171,7 +202,7 @@ const ChannelList = forwardRef(({ channels, selectedChannelId, onChannelSelect, 
 
         setPosition(prev => {
           let { x, y } = prev;
-          const totalRows = Math.ceil(channels.length / ITEMS_PER_ROW);
+          const totalRows = Math.ceil(channels.length / itemsPerRow);
           const maxRow = Math.max(0, totalRows - 1);
 
           switch (event.keyCode) {
@@ -186,8 +217,8 @@ const ChannelList = forwardRef(({ channels, selectedChannelId, onChannelSelect, 
                 const proposedIndex = getIndexFromRowCol(proposedRow, x);
                 if (proposedIndex >= channels.length) {
                   const lastIndex = channels.length - 1;
-                  y = Math.floor(lastIndex / ITEMS_PER_ROW);
-                  x = lastIndex % ITEMS_PER_ROW;
+                  y = Math.floor(lastIndex / itemsPerRow);
+                  x = lastIndex % itemsPerRow;
                 } else {
                   y = proposedRow;
                 }
@@ -199,7 +230,7 @@ const ChannelList = forwardRef(({ channels, selectedChannelId, onChannelSelect, 
               }
               break;
             case 21: // LEFT
-              if (x < ITEMS_PER_ROW - 1 && getIndexFromRowCol(y, x + 1) < channels.length) {
+              if (x < itemsPerRow - 1 && getIndexFromRowCol(y, x + 1) < channels.length) {
                 x += 1;
               }
               break;
@@ -218,11 +249,6 @@ const ChannelList = forwardRef(({ channels, selectedChannelId, onChannelSelect, 
               break;
           }
 
-          /* console.log('Android native key event (ChannelList):', event, {
-             x,
-             y,
-           });*/
-
           return { x, y };
         });
       },
@@ -237,13 +263,13 @@ const ChannelList = forwardRef(({ channels, selectedChannelId, onChannelSelect, 
         clearTimeout(hideTimerRef.current);
       }
     };
-  }, [channels.length, paused]);
+  }, [channels.length, paused, itemsPerRow]);
 
   /**
    * Scroll so that the given row stays within a window of VISIBLE_ROWS
    */
   const scrollToRow = (row) => {
-    const totalRows = Math.ceil(channels.length / ITEMS_PER_ROW);
+    const totalRows = Math.ceil(channels.length / itemsPerRow);
     const maxFirstRow = Math.max(0, totalRows - VISIBLE_ROWS);
 
     // سعی می‌کنیم ردیف فوکوس وسط پنجره باشد
@@ -254,7 +280,7 @@ const ChannelList = forwardRef(({ channels, selectedChannelId, onChannelSelect, 
       firstVisibleRow = maxFirstRow;
     }
 
-    const itemHeight = ITEM_SIZE + ITEM_MARGIN;
+    const itemHeight = itemSize + ITEM_MARGIN;
     const offset = firstVisibleRow * itemHeight;
 
     if (scrollViewRef.current) {
@@ -278,18 +304,21 @@ const ChannelList = forwardRef(({ channels, selectedChannelId, onChannelSelect, 
   // keep scroll position in sync with focused item (based on x,y)
   // Scroll exactly one row height when y > 1
   useEffect(() => {
-    const itemHeight = ITEM_SIZE + ITEM_MARGIN;
+    const itemHeight = itemSize + ITEM_MARGIN;
     const row = position.y;
     if (scrollViewRef.current) {
       const offset = row > 1 ? (row - 1) * itemHeight : 0;
       scrollViewRef.current.scrollTo({ y: offset, animated: true });
     }
-  }, [position.y, channels.length]);
+  }, [position.y, channels.length, itemSize]);
 
   // Removed bounce animation for faster navigation feel
 
   return (
-    <Animated.View style={[styles.container, { transform: [{ translateY: slideAnim }] }]}>
+    <Animated.View style={[styles.container, {
+      height: containerHeight,
+      transform: [{ translateY: slideAnim }]
+    }]}>
       <View style={{
         flexDirection: 'row',
         alignItems: 'center',
@@ -320,7 +349,8 @@ const ChannelList = forwardRef(({ channels, selectedChannelId, onChannelSelect, 
         contentContainerStyle={styles.scrollContent}
         style={styles.scrollView}
         decelerationRate="fast"
-        focusable={false}>
+        focusable={false}
+        keyboardShouldPersistTaps="handled">
         <View style={styles.gridContainer}>
           {channels.map((channel, index) => {
             const isSelected = channel.id === selectedChannelId;
@@ -335,23 +365,24 @@ const ChannelList = forwardRef(({ channels, selectedChannelId, onChannelSelect, 
               <TouchableOpacity
                 key={channel.id}
                 style={[
-                  styles.channelItem, // Use same style for both TV and Mobile (grid)
+                  styles.channelItem,
+                  { width: itemSize, height: itemSize }, // Dynamic size
                   isFocused && styles.channelItemFocused,
                   { transform: [{ scale }] },
                 ]}
                 onPress={() => handleChannelPress(channel, index)}
                 activeOpacity={0.7}>
-                <View style={styles.itemInner}>
+                <View style={[styles.itemInner, { width: itemSize - 20, height: itemSize - 20 }]}>
                   {isSvg ? (
                     <SvgUri
                       uri={channel.icon}
-                      width={isTV ? ITEM_SIZE - 30 : ITEM_SIZE - 20}
-                      height={isTV ? ITEM_SIZE - 30 : ITEM_SIZE - 20}
+                      width={isTV ? itemSize - 30 : itemSize - 20}
+                      height={isTV ? itemSize - 30 : itemSize - 20}
                     />
                   ) : (
                     <Image
                       source={{ uri: channel.icon }}
-                      style={styles.channelIcon}
+                      style={[styles.channelIcon, { width: itemSize - 30, height: itemSize - 30 }]}
                       resizeMode="contain"
                     />
                   )}
@@ -374,11 +405,10 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: isTV ? height * 0.40 : height * 0.40, // Keep height same as requested by user revert
+    // height is now dynamic via inline style
     backgroundColor: 'rgba(0, 0, 0, 0.85)',
     justifyContent: 'center',
     alignItems: 'center',
-
   },
   scrollView: {
     flex: 1,
@@ -395,8 +425,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   channelItem: {
-    width: ITEM_SIZE,
-    height: ITEM_SIZE,
+    // width and height are now dynamic
     marginLeft: ITEM_MARGIN,
     marginBottom: ITEM_MARGIN,
     borderRadius: 5,
@@ -413,8 +442,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   itemInner: {
-    width: ITEM_SIZE - 20,
-    height: ITEM_SIZE - 20,
+    // width and height are now dynamic
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -437,10 +465,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
   },
   channelIcon: {
-    width: ITEM_SIZE - 30,
-    height: ITEM_SIZE - 30,
+    // width and height are now dynamic
   },
 });
 
 export default ChannelList;
-
