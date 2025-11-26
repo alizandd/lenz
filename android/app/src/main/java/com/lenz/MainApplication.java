@@ -8,6 +8,7 @@ import com.facebook.react.shell.MainReactPackage;
 import com.facebook.soloader.SoLoader;
 import com.brentvatne.react.ReactVideoPackage;
 import com.horcrux.svg.SvgPackage;
+import com.reactnativecommunity.webview.RNCWebViewPackage;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,6 +29,7 @@ public class MainApplication extends Application implements ReactApplication {
       packages.add(new MainReactPackage());
       packages.add(new ReactVideoPackage());
       packages.add(new SvgPackage());
+      packages.add(new RNCWebViewPackage());
       packages.add(new ExitPackage());
       return packages;
     }

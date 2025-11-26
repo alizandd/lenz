@@ -53,5 +53,6 @@ dependencies {
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.0.0"
     implementation project(':react-native-video')
     implementation project(':react-native-svg')
+    implementation project(':react-native-webview')
 }
 

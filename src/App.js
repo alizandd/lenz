@@ -5,6 +5,7 @@ import ChannelList from './components/ChannelList';
 import LoadingScreen from './components/LoadingScreen';
 import ErrorScreen from './components/ErrorScreen';
 import ExitModal from './components/ExitModal';
+import FullScreenAd from './components/FullScreenAd';
 import useChannels from './hooks/useChannels';
 import { formatDateTime } from './utils/helpers';
 
@@ -31,6 +32,9 @@ const App = () => {
    * Handle hardware back button
    */
   const [exitModalVisible, setExitModalVisible] = React.useState(false);
+  const [adVisible, setAdVisible] = React.useState(false);
+  const [adShown, setAdShown] = React.useState(false);
+  const [pendingChannel, setPendingChannel] = React.useState(null);
 
   /**
    * Handle hardware back button
@@ -79,6 +83,14 @@ const App = () => {
    */
   const handleChannelSelect = useCallback(
     (channel) => {
+      // Check if ad should be shown (first click in session)
+      if (!adShown) {
+        setPendingChannel(channel);
+        setAdVisible(true);
+        setAdShown(true);
+        return;
+      }
+
       const now = new Date();
       console.log('Now:', now);
       console.log('Start:', channel.start);
@@ -100,7 +112,7 @@ const App = () => {
       setUnavailableMessage(null);
       selectChannel(channel);
     },
-    [selectChannel],
+    [selectChannel, adShown],
   );
 
   /**
@@ -204,6 +216,7 @@ const App = () => {
             streamUrl={selectedChannel.link}
             onError={handleVideoError}
             onPress={handleScreenTouch}
+            paused={adVisible}
           />
         )}
 
@@ -248,6 +261,21 @@ const App = () => {
             }
           }}
           onCancel={() => setExitModalVisible(false)}
+        />
+
+        <FullScreenAd
+          visible={adVisible}
+          onClose={() => {
+            setAdVisible(false);
+            if (pendingChannel) {
+              // Recursively call handleChannelSelect or just directly select
+              // Since we already set adShown to true, calling handleChannelSelect would work but might be redundant check
+              // Let's just duplicate the logic or call a helper. 
+              // Actually, calling handleChannelSelect again is safe because adShown is now true.
+              handleChannelSelect(pendingChannel);
+              setPendingChannel(null);
+            }
+          }}
         />
       </View>
     </TouchableWithoutFeedback>

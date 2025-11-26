@@ -8,8 +8,10 @@ import Video from 'react-native-video';
  * 
  * @param {string} streamUrl - HLS stream URL to play
  * @param {Function} onError - Callback when video playback error occurs
+ * @param {Function} onPress - Callback when video is pressed
+ * @param {boolean} paused - Whether the video should be paused
  */
-const VideoPlayer = ({ streamUrl, onError, onPress }) => {
+const VideoPlayer = ({ streamUrl, onError, onPress, paused = false }) => {
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const videoRef = useRef(null);
   const previousUrl = useRef(streamUrl);
@@ -75,7 +77,7 @@ const VideoPlayer = ({ streamUrl, onError, onPress }) => {
         playWhenInactive={false}
         onError={handleError}
         controls={false}
-        paused={false}
+        paused={paused}
         // HLS specific configurations
         useTextureView={true}
         isLive={false}

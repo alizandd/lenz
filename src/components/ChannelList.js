@@ -62,6 +62,11 @@ const ChannelList = forwardRef(({ channels, selectedChannelId, onChannelSelect, 
   const hideTimerRef = useRef(null);
   const slideAnim = useRef(new Animated.Value(0)).current; // 0 = visible, >0 = hidden (translated down)
   const isVisibleRef = useRef(true);
+  const onChannelSelectRef = useRef(onChannelSelect);
+
+  useEffect(() => {
+    onChannelSelectRef.current = onChannelSelect;
+  }, [onChannelSelect]);
 
   // Dynamic calculations based on current window dimensions
   const {
@@ -74,7 +79,7 @@ const ChannelList = forwardRef(({ channels, selectedChannelId, onChannelSelect, 
     // Calculate container height
     // In landscape, we want it smaller relative to screen height to avoid taking up too much space
     // In portrait, 40% is fine. In landscape, we reduce it to 35%
-    const heightPercentage = isLandscape ? 0.35 : 0.40;
+    const heightPercentage = isLandscape ? 0.40 : 0.40;
     const calculatedHeight = height * heightPercentage;
 
     // Calculate grid layout
@@ -241,7 +246,9 @@ const ChannelList = forwardRef(({ channels, selectedChannelId, onChannelSelect, 
                 const index = getIndexFromRowCol(y, x);
                 if (index >= 0 && index < channels.length) {
                   const selected = channels[index];
-                  onChannelSelect(selected);
+                  if (onChannelSelectRef.current) {
+                    onChannelSelectRef.current(selected);
+                  }
                   // Hide list after selection (keep default short delay or immediate)
                   scheduleHide(500);
                 }
