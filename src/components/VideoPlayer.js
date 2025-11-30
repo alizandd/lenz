@@ -66,7 +66,7 @@ const VideoPlayer = ({ streamUrl, onError, onPress, paused = false }) => {
           uri: streamUrl,
           headers: {
             // Some CDNs require a UA to deliver HLS segments on TVs
-            'User-Agent': 'Mozilla/5.0 (ExoPlayer) LenzTV/1.0',
+            'Referer': 'https://www.aparat.com/',
             'Accept': '*/*',
           },
         }}

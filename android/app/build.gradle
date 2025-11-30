@@ -7,10 +7,10 @@ android {
     compileSdkVersion 34
     buildToolsVersion "34.0.0"
 
-    namespace "com.lenz"
+    namespace "live.sam.tv"
 
     defaultConfig {
-        applicationId "com.lenz"
+        applicationId "live.sam.tv"
         minSdkVersion 21
         targetSdkVersion 34
         versionCode 2

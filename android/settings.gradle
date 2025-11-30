@@ -9,7 +9,7 @@ pluginManagement {
     }
 }
 
-rootProject.name = 'Lenz'
+rootProject.name = 'SamTV'
 
 // React Native Video
 include ':react-native-video'

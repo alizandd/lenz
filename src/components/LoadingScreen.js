@@ -8,7 +8,7 @@ import {StyleSheet, View, ActivityIndicator, Text} from 'react-native';
 const LoadingScreen = () => {
   return (
     <View style={styles.container}>
-      <ActivityIndicator size="large" color="#FFD700" />
+      <ActivityIndicator size="large" color="#00a2ffff" />
       <Text style={styles.text}>در حال بارگذاری...</Text>
     </View>
   );
@@ -30,6 +30,7 @@ const styles = StyleSheet.create({
 });
 
 export default LoadingScreen;
+
 
 
 

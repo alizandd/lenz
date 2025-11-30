@@ -20,7 +20,7 @@ const FullScreenAd = ({ visible, onClose }) => {
         if (visible) {
             setCanClose(false);
             setTimeLeft(10);
-
+            if (timer) clearInterval(timer);
             timer = setInterval(() => {
                 setTimeLeft((prev) => {
                     if (prev <= 1) {
@@ -30,7 +30,7 @@ const FullScreenAd = ({ visible, onClose }) => {
                     }
                     return prev - 1;
                 });
-            }, 1000);
+            }, 1200);
         }
         return () => {
             if (timer) clearInterval(timer);

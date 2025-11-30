@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
     },
     title: {
         fontSize: 20,
-        color: '#ffe600ff',
+        color: '#008cffff',
         marginBottom: 10,
         fontFamily: 'IRANSans-Bold',
     },

@@ -1,4 +1,4 @@
-package com.lenz;
+package live.sam.tv;
 
 import android.app.Application;
 import com.facebook.react.ReactApplication;
@@ -49,6 +49,7 @@ public class MainApplication extends Application implements ReactApplication {
   public void onCreate() {
     super.onCreate();
     SoLoader.init(this, /* native exopackage */ false);
-    ReactNativeFlipper.initializeFlipper(this, getReactNativeHost().getReactInstanceManager());
+    // ReactNativeFlipper.initializeFlipper(this,
+    // getReactNativeHost().getReactInstanceManager());
   }
 }

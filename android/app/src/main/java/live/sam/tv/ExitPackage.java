@@ -1,4 +1,4 @@
-package com.lenz;
+package live.sam.tv;
 
 import com.facebook.react.ReactPackage;
 import com.facebook.react.bridge.NativeModule;
