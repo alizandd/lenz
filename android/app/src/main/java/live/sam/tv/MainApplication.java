@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * MainApplication for the Lenz TV application
+ * MainApplication for the SamTV application
  */
 public class MainApplication extends Application implements ReactApplication {
 

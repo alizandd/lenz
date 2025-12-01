@@ -15,7 +15,7 @@ import android.view.View;
 import com.facebook.react.modules.i18nmanager.I18nUtil;
 
 /**
- * MainActivity for the Lenz TV application
+ * MainActivity for the SamTV application
  * Supports both Android TV and mobile platforms
  */
 public class MainActivity extends ReactActivity {
@@ -45,7 +45,7 @@ public class MainActivity extends ReactActivity {
    */
   @Override
   protected String getMainComponentName() {
-    return "Lenz";
+    return "SamTV";
   }
 
   /**
