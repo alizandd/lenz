@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
     View,
     Text,
@@ -9,67 +9,75 @@ import {
 
 const ExitModal = ({ visible, onConfirm, onCancel }) => {
     const [focusedButton, setFocusedButton] = useState('no'); // 'yes' or 'no'
+    
+    // Use ref to always have the latest value in the event handler
+    const focusedButtonRef = useRef(focusedButton);
+    const onConfirmRef = useRef(onConfirm);
+    const onCancelRef = useRef(onCancel);
+    
+    // Keep refs in sync with state/props
+    useEffect(() => {
+        focusedButtonRef.current = focusedButton;
+    }, [focusedButton]);
+    
+    useEffect(() => {
+        onConfirmRef.current = onConfirm;
+        onCancelRef.current = onCancel;
+    }, [onConfirm, onCancel]);
 
     // Reset focus when modal becomes visible
     useEffect(() => {
         if (visible) {
             setFocusedButton('no');
+            focusedButtonRef.current = 'no';
         }
     }, [visible]);
 
     useEffect(() => {
-        if (visible) {
-            const subscription = DeviceEventEmitter.addListener(
-                'AndroidKeyEvent',
-                (event) => {
-                    console.log('ExitModal key event:', event);
-                    if (event.action !== 0) return; // Only handle key down
+        if (!visible) return;
+        
+        const subscription = DeviceEventEmitter.addListener(
+            'AndroidKeyEvent',
+            (event) => {
+                console.log('ExitModal key event:', event, 'Current focus:', focusedButtonRef.current);
+                if (event.action !== 0) return; // Only handle key down
 
-                    switch (event.keyCode) {
-                        case 21: // DPAD_LEFT
-                            // In RTL, or specific device mapping, this might need swapping
-                            // User reported Left key sends 22 (or behaves like it)
-                            // But standard is 21=Left.
-                            // If user presses Left and gets 22, we handle 22.
-                            // If user presses Left and gets 21, we handle 21.
+                switch (event.keyCode) {
+                    case 21: // DPAD_LEFT
+                        console.log('Key 21 (Left) -> Setting focus to NO');
+                        setFocusedButton('no');
+                        focusedButtonRef.current = 'no';
+                        break;
+                    case 22: // DPAD_RIGHT
+                        console.log('Key 22 (Right) -> Setting focus to YES');
+                        setFocusedButton('yes');
+                        focusedButtonRef.current = 'yes';
+                        break;
+                    case 66: // ENTER
+                    case 23: // DPAD_CENTER
+                        console.log('ENTER/CENTER pressed, focused on:', focusedButtonRef.current);
+                        if (focusedButtonRef.current === 'yes') {
+                            console.log('Calling onConfirm (exit app)');
+                            onConfirmRef.current();
+                        } else {
+                            console.log('Calling onCancel (close modal)');
+                            onCancelRef.current();
+                        }
+                        break;
+                    case 4: // BACK
+                        console.log('BACK pressed, closing modal');
+                        setFocusedButton('no');
+                        focusedButtonRef.current = 'no';
+                        onCancelRef.current();
+                        break;
+                }
+            },
+        );
 
-                            // Standard mapping:
-                            // 21 (Left) -> Focus 'no' (Left button)
-                            // 22 (Right) -> Focus 'yes' (Right button)
-
-                            // User reported: Press Left -> Console "Yes" (22) -> Flicker Yes/No.
-                            // This implies Left Key = 22.
-                            // So we map 22 to 'no' and 21 to 'yes'.
-
-                            console.log('Key 21 (Left?) -> Setting focus to YES');
-                            setFocusedButton('no');
-                            break;
-                        case 22: // DPAD_RIGHT
-                            console.log('Key 22 (Right?) -> Setting focus to NO');
-
-                            setFocusedButton('yes');
-                            break;
-                        case 66: // ENTER
-                        case 23: // DPAD_CENTER
-                            if (focusedButton === 'yes') {
-                                onConfirm();
-                            } else {
-                                onCancel();
-                            }
-                            break;
-                        case 4: // BACK
-                            setFocusedButton('no');
-                            onCancel();
-                            break;
-                    }
-                },
-            );
-
-            return () => {
-                subscription.remove();
-            };
-        }
-    }, [visible, focusedButton, onConfirm, onCancel]);
+        return () => {
+            subscription.remove();
+        };
+    }, [visible]); // Only depend on visible, use refs for everything else
 
     if (!visible) return null;
 
