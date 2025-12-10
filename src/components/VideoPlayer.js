@@ -16,8 +16,9 @@ const PLAYER_CONFIGS = [
     name: 'Default (Texture)',
     props: {
       useTextureView: true,
+      minLoadRetryCount: 5, // Retry more on network failure
       bufferConfig: {
-        minBufferMs: 15000,
+        minBufferMs: 10000, // Reduced from 15000 to be more responsive
         maxBufferMs: 50000,
         bufferForPlaybackMs: 2500,
         bufferForPlaybackAfterRebufferMs: 5000,
@@ -29,6 +30,7 @@ const PLAYER_CONFIGS = [
     props: {
       useTextureView: true,
       type: 'm3u8',
+      minLoadRetryCount: 5,
       bufferConfig: {
         minBufferMs: 15000,
         maxBufferMs: 50000,
@@ -42,6 +44,7 @@ const PLAYER_CONFIGS = [
     props: {
       useTextureView: false, // SurfaceView is more stable on older Android TVs
       type: 'm3u8',
+      minLoadRetryCount: 5,
       bufferConfig: {
         minBufferMs: 15000,
         maxBufferMs: 50000,
@@ -55,6 +58,7 @@ const PLAYER_CONFIGS = [
     props: {
       useTextureView: false,
       type: 'm3u8',
+      minLoadRetryCount: 5,
       bufferConfig: {
         minBufferMs: 30000,
         maxBufferMs: 100000,
@@ -74,6 +78,15 @@ const VideoPlayer = ({ streamUrl, onError, onPress, paused = false }) => {
   const [configIndex, setConfigIndex] = useState(0);
   const [reloadKey, setReloadKey] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [maxBitrate, setMaxBitrate] = useState(1000000); // Start with 1Mbps to ensure fast start
+
+  useEffect(() => {
+    // Uncap bitrate after 10 seconds to allow switching to higher quality
+    const timer = setTimeout(() => {
+      setMaxBitrate(undefined);
+    }, 10000);
+    return () => clearTimeout(timer);
+  }, [streamUrl, reloadKey]);
 
   // Watchdog refs
   const loadTimeoutRef = useRef(null);
@@ -183,12 +196,20 @@ const VideoPlayer = ({ streamUrl, onError, onPress, paused = false }) => {
         paused={paused}
 
         // Adaptive Props
+        selectedVideoTrack={{
+          type: 'auto',
+        }}
+        maxBitrate={maxBitrate}
         {...currentConfig.props}
 
         // Events
         onLoad={onVideoLoad}
         onError={onVideoError}
         onProgress={onVideoProgress}
+        onBandwidthUpdate={(data) => {
+          // Optional: Log bandwidth for debugging
+          // console.log('Bandwidth:', data.bitrate);
+        }}
 
         allowsCrossProtocolRedirects={true}
       />

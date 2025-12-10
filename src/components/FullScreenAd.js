@@ -26,16 +26,17 @@ const FullScreenAd = ({ visible, onClose }) => {
                     if (prev <= 1) {
                         clearInterval(timer);
                         setCanClose(true);
+                        onClose(); // Auto-close when timer finishes
                         return 0;
                     }
                     return prev - 1;
                 });
-            }, 1200);
+            }, 1000); // Fixed timing to standard 1000ms
         }
         return () => {
             if (timer) clearInterval(timer);
         };
-    }, [visible]);
+    }, [visible, onClose]);
 
     // Handle Back Button
     useEffect(() => {
