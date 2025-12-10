@@ -13,6 +13,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { SvgUri, SvgXml } from 'react-native-svg';
+import { isChannelAvailable } from '../utils/helpers';
 
 const isTV = Platform.isTV;
 const VISIBLE_ROWS = 6;
@@ -51,6 +52,17 @@ const ChannelList = forwardRef(({ channels, selectedChannelId, onChannelSelect, 
   useEffect(() => {
     onChannelSelectRef.current = onChannelSelect;
   }, [onChannelSelect]);
+
+  // Sync focus position with selected channel
+  useEffect(() => {
+    if (selectedChannelId && channels.length > 0) {
+      const index = channels.findIndex(c => c.id === selectedChannelId);
+      if (index !== -1) {
+        const { row, col } = getRowCol(index);
+        setPosition({ x: col, y: row });
+      }
+    }
+  }, [selectedChannelId, channels, itemsPerRow]);
 
   // Dynamic calculations based on current window dimensions
   const {
@@ -178,16 +190,49 @@ const ChannelList = forwardRef(({ channels, selectedChannelId, onChannelSelect, 
         if (event.action !== 0) return; // Only handle key down
         if (event.keyCode === 4) return; // Ignore Back button
 
+        const isChannelKey = event.keyCode === 166 || event.keyCode === 167;
+
         // If hidden, any key just shows it and resets timer
-        if (!isVisibleRef.current) {
+        // EXCEPTION: Channel keys should work without showing the list
+        if (!isVisibleRef.current && !isChannelKey) {
           showContainer();
           scheduleHide(60000);
           return;
         }
 
         // If visible, reset timer
-        showContainer();
-        scheduleHide(60000);
+        if (isVisibleRef.current) {
+          showContainer();
+          scheduleHide(60000);
+        }
+        // Handle Channel Keys (166: CH_UP, 167: CH_DOWN)
+        if (isChannelKey) {
+          const currentIndex = channels.findIndex(c => c.id === selectedChannelId);
+          let newIndex = currentIndex;
+          let attempts = 0;
+          const maxAttempts = channels.length;
+
+          // Loop to find next AVAILABLE channel
+          do {
+            if (event.keyCode === 166) { // CH_UP
+              newIndex = newIndex + 1;
+              if (newIndex >= channels.length) newIndex = 0; // Loop to start
+            } else if (event.keyCode === 167) { // CH_DOWN
+              newIndex = newIndex - 1;
+              if (newIndex < 0) newIndex = channels.length - 1; // Loop to end
+            }
+            attempts++;
+          } while (!isChannelAvailable(channels[newIndex]) && attempts < maxAttempts);
+
+          // If we found an available channel (or looped back to start if all unavailable)
+          if (newIndex >= 0 && newIndex < channels.length && isChannelAvailable(channels[newIndex])) {
+            const newChannel = channels[newIndex];
+            if (onChannelSelectRef.current) {
+              onChannelSelectRef.current(newChannel);
+            }
+          }
+          return;
+        }
 
         setPosition(prev => {
           let { x, y } = prev;
@@ -262,7 +307,7 @@ const ChannelList = forwardRef(({ channels, selectedChannelId, onChannelSelect, 
         clearTimeout(hideTimerRef.current);
       }
     };
-  }, [channels.length, paused, itemsPerRow]);
+  }, [channels, paused, itemsPerRow, selectedChannelId]);
 
   /**
    * Scroll so that the given row stays within a window of VISIBLE_ROWS
