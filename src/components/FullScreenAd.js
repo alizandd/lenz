@@ -12,14 +12,14 @@ import { WebView } from 'react-native-webview';
 
 const FullScreenAd = ({ visible, onClose }) => {
     const [canClose, setCanClose] = useState(false);
-    const [timeLeft, setTimeLeft] = useState(10);
+    const [timeLeft, setTimeLeft] = useState(20);
     const closeButtonRef = useRef(null);
 
     useEffect(() => {
         let timer;
         if (visible) {
             setCanClose(false);
-            setTimeLeft(10);
+            setTimeLeft(20);
             if (timer) clearInterval(timer);
             timer = setInterval(() => {
                 setTimeLeft((prev) => {
@@ -28,6 +28,10 @@ const FullScreenAd = ({ visible, onClose }) => {
                         setCanClose(true);
                         onClose(); // Auto-close when timer finishes
                         return 0;
+                    }
+                    // Enable close button when 10 seconds remain (after 10 seconds have passed)
+                    if (prev <= 11) {
+                        setCanClose(true);
                     }
                     return prev - 1;
                 });
@@ -101,7 +105,7 @@ const FullScreenAd = ({ visible, onClose }) => {
                         hasTVPreferredFocus={canClose} // Try to grab focus when active
                     >
                         <Text style={styles.closeText}>
-                            {canClose ? 'بستن تبلیغ' : `بستن (${timeLeft})`}
+                            {canClose ? 'بستن تبلیغ' : `بستن (${timeLeft - 10})`}
                         </Text>
                     </TouchableOpacity>
                 </View>

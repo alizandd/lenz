@@ -190,6 +190,9 @@ const ChannelList = forwardRef(({ channels, selectedChannelId, onChannelSelect, 
         if (event.action !== 0) return; // Only handle key down
         if (event.keyCode === 4) return; // Ignore Back button
 
+        // Ignore Volume keys (24: VOLUME_UP, 25: VOLUME_DOWN)
+        if (event.keyCode === 24 || event.keyCode === 25) return;
+
         const isChannelKey = event.keyCode === 166 || event.keyCode === 167;
 
         // If hidden, any key just shows it and resets timer
