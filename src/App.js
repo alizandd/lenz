@@ -1,10 +1,11 @@
-import React, { useCallback, useEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, View, StatusBar, DeviceEventEmitter, Text, TouchableWithoutFeedback, BackHandler, Alert, Linking, Platform, NativeModules } from 'react-native';
 import VideoPlayer from './components/VideoPlayer';
 import ChannelList from './components/ChannelList';
 import LoadingScreen from './components/LoadingScreen';
 import ErrorScreen from './components/ErrorScreen';
-import ExitModal from './components/ExitModal';
+import Toast from './components/Toast';
+import FullScreenAd from './components/FullScreenAd';
 import useChannels from './hooks/useChannels';
 import { formatDateTime } from './utils/helpers';
 
@@ -30,16 +31,30 @@ const App = () => {
   /**
    * Handle hardware back button
    */
-  const [exitModalVisible, setExitModalVisible] = React.useState(false);
+  const [adVisible, setAdVisible] = useState(false);
+  const [adShown, setAdShown] = useState(false);
+  const [pendingChannel, setPendingChannel] = useState(null);
+
+  // Toast state for double back to exit
+  const [toastVisible, setToastVisible] = useState(false);
+  const lastBackPress = useRef(0);
+  const toastTimeout = useRef(null);
 
   /**
    * Handle hardware back button
    */
   useEffect(() => {
     const backAction = () => {
-      if (exitModalVisible) {
-        setExitModalVisible(false);
-        return true;
+      // If ad is visible, let the ad component handle it or close it?
+      // The ad component usually has its own close button, but back should probably close it too if it's an overlay.
+      // However, the original code didn't seem to handle ad closing with back button explicitly in backAction, 
+      // but let's stick to the requested logic first.
+
+      if (adVisible) {
+        // Optional: Close ad on back press if desired, but user didn't specify.
+        // For now, let's assume ad handles itself or user must click close.
+        // But usually back should close modals.
+        // Let's leave ad logic as is for now to avoid side effects.
       }
 
       if (channelListRef.current && channelListRef.current.isVisible()) {
@@ -47,7 +62,29 @@ const App = () => {
         return true;
       }
 
-      setExitModalVisible(true);
+      const now = Date.now();
+      const DOUBLE_PRESS_DELAY = 2000;
+
+      if (lastBackPress.current && now - lastBackPress.current < DOUBLE_PRESS_DELAY) {
+        // Double press detected, exit app
+        const { ExitModule } = NativeModules;
+        if (ExitModule) {
+          ExitModule.exitApp();
+        } else {
+          BackHandler.exitApp();
+        }
+        return true;
+      }
+
+      lastBackPress.current = now;
+      setToastVisible(true);
+
+      // Hide toast after delay
+      if (toastTimeout.current) clearTimeout(toastTimeout.current);
+      toastTimeout.current = setTimeout(() => {
+        setToastVisible(false);
+      }, DOUBLE_PRESS_DELAY);
+
       return true;
     };
 
@@ -56,8 +93,11 @@ const App = () => {
       backAction,
     );
 
-    return () => backHandler.remove();
-  }, [exitModalVisible]);
+    return () => {
+      backHandler.remove();
+      if (toastTimeout.current) clearTimeout(toastTimeout.current);
+    };
+  }, [adVisible]);
 
   /**
    * Global handler for navigation direction (called from ChannelList)
@@ -71,7 +111,7 @@ const App = () => {
    * Handle channel selection
    * @param {Object} channel - Selected channel object
    */
-  const [unavailableMessage, setUnavailableMessage] = React.useState(null);
+  const [unavailableMessage, setUnavailableMessage] = useState(null);
 
   /**
    * Handle channel selection
@@ -79,6 +119,14 @@ const App = () => {
    */
   const handleChannelSelect = useCallback(
     (channel) => {
+      // Check if ad should be shown (first click in session)
+      if (!adShown) {
+        setPendingChannel(channel);
+        setAdVisible(true);
+        setAdShown(true);
+        return;
+      }
+
       const now = new Date();
       console.log('Now:', now);
       console.log('Start:', channel.start);
@@ -100,13 +148,18 @@ const App = () => {
       setUnavailableMessage(null);
       selectChannel(channel);
     },
-    [selectChannel],
+    [selectChannel, adShown],
   );
 
   /**
    * Handle deep links
    */
   useEffect(() => {
+    // Don't process deep links until channels are loaded
+    if (loading || channels.length === 0) {
+      return;
+    }
+
     const handleDeepLink = ({ url }) => {
       console.log('Deep link received:', url);
       if (url) {
@@ -120,8 +173,13 @@ const App = () => {
           const targetChannel = channels.find(c => c.id.toString() === id);
           if (targetChannel) {
             handleChannelSelect(targetChannel);
+            // Show the channel list to reflect "focus and show"
+            if (channelListRef.current) {
+              channelListRef.current.show();
+            }
           } else {
             console.warn('Channel not found for deep link ID:', id);
+            console.log('Available channel IDs:', channels.map(c => c.id).join(', '));
           }
         }
       }
@@ -140,7 +198,7 @@ const App = () => {
     return () => {
       linkingSubscription.remove();
     };
-  }, [channels, handleChannelSelect]);
+  }, [channels, loading, handleChannelSelect]);
 
   /**
    * Handle video playback errors
@@ -204,6 +262,7 @@ const App = () => {
             streamUrl={selectedChannel.link}
             onError={handleVideoError}
             onPress={handleScreenTouch}
+            paused={adVisible}
           />
         )}
 
@@ -231,23 +290,27 @@ const App = () => {
             channels={channels}
             selectedChannelId={selectedChannel?.id}
             onChannelSelect={handleChannelSelect}
-            paused={exitModalVisible}
+            paused={false}
           />
         )}
 
-        <ExitModal
-          visible={exitModalVisible}
-          onConfirm={() => {
-            // Use native module to properly exit the app
-            const { ExitModule } = NativeModules;
-            if (ExitModule) {
-              ExitModule.exitApp();
-            } else {
-              // Fallback to BackHandler
-              BackHandler.exitApp();
-            }
+        <Toast
+          visible={toastVisible}
+          message="برای خروج یکبار دیگر دکمه بازگشت را بزنید"
+        />
+
+        <FullScreenAd
+          visible={adVisible}
+          onClose={() => {
+            setAdVisible(false);
+            // Delay channel selection to allow WebView to cleanup and Modal to close
+            setTimeout(() => {
+              if (pendingChannel) {
+                handleChannelSelect(pendingChannel);
+                setPendingChannel(null);
+              }
+            }, 500);
           }}
-          onCancel={() => setExitModalVisible(false)}
         />
       </View>
     </TouchableWithoutFeedback>
@@ -295,3 +358,4 @@ const styles = StyleSheet.create({
 });
 
 export default App;
+

@@ -13,6 +13,7 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import { SvgUri, SvgXml } from 'react-native-svg';
+import { isChannelAvailable } from '../utils/helpers';
 
 const isTV = Platform.isTV;
 const VISIBLE_ROWS = 6;
@@ -26,23 +27,7 @@ const TV_COLUMNS = 12;
 const MIN_MOBILE_ITEM_WIDTH = 60; // Reduced to allow more items/smaller items
 
 // Inline SVG for the app logo to avoid network/require issues on React Native
-const lenzLogoXml = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg  viewBox="0 0 335 335" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="512px" height="512px">
-    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <g id="lenz-logo-copy-3">
-            <g id="Group" transform="translate(3.000000, 3.000000)">
-                <path d="M245.946094,328.184723 L114.28402,328.184723 C51.882438,328.184723 0.826513905,277.12805 0.826513905,214.725242 L0.826513905,83.0615445 C0.826513905,37.8385022 37.8264444,0.837718489 83.0488227,0.837718489 L203.152293,0.837718489 C271.911262,0.837718489 328.168403,57.0959952 328.168403,125.855664 L328.168403,245.961207 C328.168403,291.18394 291.168472,328.184723 245.946094,328.184723" id="Fill-8" fill="#C4161C"></path>
-                <path d="M65.5152981,72.8025984 L65.5152981,34.2441855 C65.5152981,33.9032187 65.7942668,33.6242459 66.1352286,33.6242459 L195.218702,33.6242459 C252.000924,33.6242459 298.458824,80.0828278 298.458824,136.865883 L298.458824,259.845777 C298.458824,260.186744 298.179855,260.465717 297.838893,260.465717 L262.577651,260.465717 L262.577651,295.464126 L130.820727,295.464126 C75.1680185,295.464126 29.6341251,254.109507 29.6341251,198.455981 L29.6341251,72.8025984 L65.5152981,72.8025984 Z M65.5152981,72.8025984 L65.5152981,187.681711 C65.5152981,227.713069 98.2674649,260.465717 138.298236,260.465717 L262.577651,260.465717 L262.577651,154.084736 C262.577651,109.379343 226.001133,72.8025984 181.296706,72.8025984 L65.5152981,72.8025984 Z" id="Combined-Shape" fill="#FED484"></path>
-                <path d="M65.5152981,72.8025984 L29.6341251,72.8025984 L29.6341251,198.455981 C29.6341251,254.109507 75.1680185,295.464126 130.820727,295.464126 L262.577651,295.464126 L262.577651,260.465717 L138.298236,260.465717 C98.2674649,260.465717 65.5152981,227.713069 65.5152981,187.681711 L65.5152981,72.8025984 Z" id="Combined-Shape" fill="#FEAA0A"></path>
-                <path d="M242.063934,241.116101 L153.847208,241.116101 C116.55777,241.116101 86.0482013,212.570673 86.0482013,175.280687 L86.0482013,91.1682153 C86.0482013,90.8272486 86.32717,90.5482758 86.6681318,90.5482758 L172.634511,90.5482758 C211.16164,90.5482758 242.683865,122.070963 242.683865,160.598658 L242.683865,240.496161 C242.683865,240.837128 242.404896,241.116101 242.063934,241.116101" id="Fill-14" fill="#FFFFFF"></path>
-                <path d="M220.967514,164.891709 C220.967514,196.147202 195.630336,221.484753 164.375301,221.484753 C133.120266,221.484753 107.783088,196.147202 107.783088,164.891709 C107.783088,133.636215 133.120266,108.298665 164.375301,108.298665 C195.630336,108.298665 220.967514,133.636215 220.967514,164.891709" id="Fill-16" fill="#232E41"></path>
-                <path d="M195.137057,164.422043 C195.137057,181.670931 181.154215,195.653979 163.90558,195.653979 C146.657254,195.653979 132.674412,181.670931 132.674412,164.422043 C132.674412,147.173154 146.657254,133.190107 163.90558,133.190107 C181.154215,133.190107 195.137057,147.173154 195.137057,164.422043" id="Fill-18" fill="#00152C"></path>
-                <path d="M166.488768,187.200111 C166.488768,195.500172 159.760353,202.228996 151.460103,202.228996 C143.160164,202.228996 136.431439,195.500172 136.431439,187.200111 C136.431439,178.900049 143.160164,172.171225 151.460103,172.171225 C159.760353,172.171225 166.488768,178.900049 166.488768,187.200111" id="Fill-20" fill="#FFFFFF"></path>
-                <path d="M183.395946,135.303667 C183.395946,139.58342 179.926505,143.052911 175.646815,143.052911 C171.367125,143.052911 167.897684,139.58342 167.897684,135.303667 C167.897684,131.023914 171.367125,127.554422 175.646815,127.554422 C179.926505,127.554422 183.395946,131.023914 183.395946,135.303667" id="Fill-22" fill="#FFFFFF"></path>
-            </g>
-        </g>
-    </g>
-</svg>`;
+const lenzLogo = require('../public/SAMTV.png');
 
 /**
  * ChannelList Component
@@ -62,6 +47,22 @@ const ChannelList = forwardRef(({ channels, selectedChannelId, onChannelSelect, 
   const hideTimerRef = useRef(null);
   const slideAnim = useRef(new Animated.Value(0)).current; // 0 = visible, >0 = hidden (translated down)
   const isVisibleRef = useRef(true);
+  const onChannelSelectRef = useRef(onChannelSelect);
+
+  useEffect(() => {
+    onChannelSelectRef.current = onChannelSelect;
+  }, [onChannelSelect]);
+
+  // Sync focus position with selected channel
+  useEffect(() => {
+    if (selectedChannelId && channels.length > 0) {
+      const index = channels.findIndex(c => c.id === selectedChannelId);
+      if (index !== -1) {
+        const { row, col } = getRowCol(index);
+        setPosition({ x: col, y: row });
+      }
+    }
+  }, [selectedChannelId, channels, itemsPerRow]);
 
   // Dynamic calculations based on current window dimensions
   const {
@@ -74,7 +75,7 @@ const ChannelList = forwardRef(({ channels, selectedChannelId, onChannelSelect, 
     // Calculate container height
     // In landscape, we want it smaller relative to screen height to avoid taking up too much space
     // In portrait, 40% is fine. In landscape, we reduce it to 35%
-    const heightPercentage = isLandscape ? 0.35 : 0.40;
+    const heightPercentage = isLandscape ? 0.40 : 0.40;
     const calculatedHeight = height * heightPercentage;
 
     // Calculate grid layout
@@ -189,16 +190,52 @@ const ChannelList = forwardRef(({ channels, selectedChannelId, onChannelSelect, 
         if (event.action !== 0) return; // Only handle key down
         if (event.keyCode === 4) return; // Ignore Back button
 
+        // Ignore Volume keys (24: VOLUME_UP, 25: VOLUME_DOWN)
+        if (event.keyCode === 24 || event.keyCode === 25) return;
+
+        const isChannelKey = event.keyCode === 166 || event.keyCode === 167;
+
         // If hidden, any key just shows it and resets timer
-        if (!isVisibleRef.current) {
+        // EXCEPTION: Channel keys should work without showing the list
+        if (!isVisibleRef.current && !isChannelKey) {
           showContainer();
           scheduleHide(60000);
           return;
         }
 
         // If visible, reset timer
-        showContainer();
-        scheduleHide(60000);
+        if (isVisibleRef.current) {
+          showContainer();
+          scheduleHide(60000);
+        }
+        // Handle Channel Keys (166: CH_UP, 167: CH_DOWN)
+        if (isChannelKey) {
+          const currentIndex = channels.findIndex(c => c.id === selectedChannelId);
+          let newIndex = currentIndex;
+          let attempts = 0;
+          const maxAttempts = channels.length;
+
+          // Loop to find next AVAILABLE channel
+          do {
+            if (event.keyCode === 166) { // CH_UP
+              newIndex = newIndex + 1;
+              if (newIndex >= channels.length) newIndex = 0; // Loop to start
+            } else if (event.keyCode === 167) { // CH_DOWN
+              newIndex = newIndex - 1;
+              if (newIndex < 0) newIndex = channels.length - 1; // Loop to end
+            }
+            attempts++;
+          } while (!isChannelAvailable(channels[newIndex]) && attempts < maxAttempts);
+
+          // If we found an available channel (or looped back to start if all unavailable)
+          if (newIndex >= 0 && newIndex < channels.length && isChannelAvailable(channels[newIndex])) {
+            const newChannel = channels[newIndex];
+            if (onChannelSelectRef.current) {
+              onChannelSelectRef.current(newChannel);
+            }
+          }
+          return;
+        }
 
         setPosition(prev => {
           let { x, y } = prev;
@@ -209,7 +246,9 @@ const ChannelList = forwardRef(({ channels, selectedChannelId, onChannelSelect, 
             case 19: // UP
               if (y > 0) {
                 y -= 1;
+                handeleChannelSelect(y, x);
               }
+
               break;
             case 20: // DOWN
               if (y < maxRow) {
@@ -222,17 +261,23 @@ const ChannelList = forwardRef(({ channels, selectedChannelId, onChannelSelect, 
                 } else {
                   y = proposedRow;
                 }
+                handeleChannelSelect(y, x);
               }
+
               break;
             case 22: // RIGHT
               if (x > 0) {
                 x -= 1;
+                handeleChannelSelect(y, x);
               }
+
               break;
             case 21: // LEFT
               if (x < itemsPerRow - 1 && getIndexFromRowCol(y, x + 1) < channels.length) {
                 x += 1;
+                handeleChannelSelect(y, x);
               }
+
               break;
             case 23: // DPAD_CENTER
             case 66: // ENTER
@@ -241,9 +286,11 @@ const ChannelList = forwardRef(({ channels, selectedChannelId, onChannelSelect, 
                 const index = getIndexFromRowCol(y, x);
                 if (index >= 0 && index < channels.length) {
                   const selected = channels[index];
-                  onChannelSelect(selected);
+                  if (onChannelSelectRef.current) {
+                    onChannelSelectRef.current(selected);
+                  }
                   // Hide list after selection (keep default short delay or immediate)
-                  scheduleHide(500);
+                  scheduleHide(800);
                 }
               }
               break;
@@ -263,7 +310,7 @@ const ChannelList = forwardRef(({ channels, selectedChannelId, onChannelSelect, 
         clearTimeout(hideTimerRef.current);
       }
     };
-  }, [channels.length, paused, itemsPerRow]);
+  }, [channels, paused, itemsPerRow, selectedChannelId]);
 
   /**
    * Scroll so that the given row stays within a window of VISIBLE_ROWS
@@ -288,6 +335,17 @@ const ChannelList = forwardRef(({ channels, selectedChannelId, onChannelSelect, 
     }
   };
 
+  const handeleChannelSelect = (y, x) => {
+    const index = getIndexFromRowCol(y, x);
+    if (index >= 0 && index < channels.length) {
+      const selected = channels[index];
+      if (onChannelSelectRef.current) {
+        onChannelSelectRef.current(selected);
+      }
+      // Hide list after selection (keep default short delay or immediate)
+      //scheduleHide(800);
+    }
+  };
   /**
    * Handle channel selection via touch
    * @param {Object} channel - Selected channel object
@@ -323,16 +381,16 @@ const ChannelList = forwardRef(({ channels, selectedChannelId, onChannelSelect, 
         flexDirection: 'row',
         alignItems: 'center',
         alignSelf: 'flex-start',
-        marginTop: 8,
+        marginTop: 0,
         marginBottom: 3,
-        marginLeft: 35,
+        marginLeft: 38,
       }}>
-        <SvgXml
-          width={30}
-          height={30}
-          xml={lenzLogoXml}
+        <Image
+          source={lenzLogo}
+          style={{ width: 64, height: 40 }}
+
         />
-        <Text style={{
+        {/* <Text style={{
           fontSize: 20,
           color: '#fff',
           marginRight: 8,
@@ -341,7 +399,7 @@ const ChannelList = forwardRef(({ channels, selectedChannelId, onChannelSelect, 
           fontFamily: 'IRANSans-Medium', // If not available, fallback to default
         }}>
           لنز
-        </Text>
+        </Text> */}
       </View>
       <ScrollView
         ref={scrollViewRef}
@@ -433,13 +491,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#3b3939',
     // shadow for depth
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 8,
+
   },
   itemInner: {
     // width and height are now dynamic
@@ -454,14 +507,14 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   channelItemFocused: {
-    borderColor: '#FFD700',
-    backgroundColor: 'rgba(255, 215, 0, 0.3)',
+    borderColor: '#0099ffff',
+    backgroundColor: 'rgba(0, 183, 255, 0.3)',
     elevation: 15,
     borderWidth: 2,
   },
   channelItemSelected: {
-    borderColor: '#FF6B00',
-    backgroundColor: 'rgba(255, 107, 0, 0.25)',
+    borderColor: '#0099ffff',
+    backgroundColor: 'rgba(0, 183, 255, 0.3)',
     borderWidth: 2,
   },
   channelIcon: {

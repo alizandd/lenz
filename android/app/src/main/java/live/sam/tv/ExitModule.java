@@ -1,4 +1,4 @@
-package com.lenz;
+package live.sam.tv;
 
 import android.app.Activity;
 import com.facebook.react.bridge.ReactApplicationContext;

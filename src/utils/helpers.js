@@ -115,3 +115,34 @@ export const sortChannels = (channels) => {
     return a.title.localeCompare(b.title, 'fa');
   });
 };
+
+/**
+ * Check if a channel is currently available based on start/end time
+ * @param {Object} channel - Channel object
+ * @returns {boolean} True if available
+ */
+export const isChannelAvailable = (channel) => {
+  if (!channel) return false;
+
+  // If no start/end time, assume available (or check link existence)
+  if (!channel.start || !channel.end) return true;
+
+  try {
+    const now = new Date();
+    // Ensure proper parsing by replacing space with T
+    const start = new Date(channel.start.replace(' ', 'T'));
+    // const end = new Date(channel.end.replace(' ', 'T')); // Not used for "started" check but good to have
+
+    // If start time is in the future, it's not available yet
+    if (now < start) {
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.warn('Error parsing channel dates', e);
+    return true; // Fail safe
+  }
+};
+
+
+

@@ -1,5 +1,4 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.lenz">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!-- Permissions for internet and network access -->
     <uses-permission android:name="android.permission.INTERNET" />
@@ -67,7 +66,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="lenz" />
+                <data android:scheme="samtv" />
             </intent-filter>
         </activity>
     </application>
